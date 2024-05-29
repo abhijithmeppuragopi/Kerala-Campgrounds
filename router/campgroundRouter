@@ -1,0 +1,156 @@
+const express = require('express');
+const router = express.Router();
+
+const {campgroundSchema}= require('../validateSchema.js');
+const catchAsync= require('../utils/catchAsync.js');
+const campground=require('../models/model');
+// const review=require('./models/reviewModel');
+const ExpressError= require('../utils/ExpressError.js');
+const flash = require('connect-flash');
+const {isLoggedIn}=require('../middleware');
+const {storage}=require('../cloudinary/index');
+const {cloudinary}=require('../cloudinary/index');
+const multer  = require('multer');
+const upload = multer({storage});
+const mbxGeocoding= require('@mapbox/mapbox-sdk/services/geocoding');
+const mapBoxToken=process.env.MAPBOX_TOKEN;
+const geocodingClient=mbxGeocoding({accessToken:mapBoxToken});
+
+
+
+
+
+
+const validateCampground = (req, res, next) => {
+    const { error } = campgroundSchema.validate(req.body);
+    if (error) {
+        const msg = error.details.map(el => el.message).join(',')
+        throw new ExpressError(msg, 400)
+    } else {
+        next();
+    }
+}
+const isAuthor=async (req,res,next)=>{
+    const {id} =req.params;
+    const campgrounds=await campground.findById(id); 
+    if(!campgrounds.author[0].equals(req.user._id)){
+       req.flash('error','you are not allowed to do that');
+       return res.redirect(`/campgrounds/${id}`);
+    }
+   next();
+}
+
+
+router.get('/',catchAsync(async(req,res)=>{
+    //  const camp=new campground({title:'munnar',location:'mattuppetty',price:100})
+    //  await camp.save();   
+    const campgrounds=await campground.find({});
+    res.render('home',{campgrounds});
+    }))
+    
+router.get('/new',isLoggedIn,(req,res)=>{
+        
+        res.render('newcamp');
+    
+    })
+
+    router.get('/:id',catchAsync( async(req,res)=>{
+       
+        const campgrounds = await campground.findById(req.params.id).populate({
+            path: 'review',
+            populate: {
+                path: 'author'
+            }
+        }).populate('author');
+        
+        if (!campgrounds) {
+            req.flash('error', 'Cannot find that campground!');
+            return res.redirect('/campgrounds');
+        }
+        res.render('show', { campgrounds });
+
+
+        // const {id} =req.params;
+        // const campgrounds=await campground.findById(id).populate('review');
+        // const author=await campground.findById(id).populate('author');
+        
+        // res.render('show',{campgrounds,author});
+    }))
+
+    router.get('/:id/edit',isLoggedIn,isAuthor ,catchAsync (async(req,res)=>{
+        const {id} =req.params;
+        const campgrounds=await campground.findById(id);
+        if (!campground) {
+            req.flash('error', 'Cannot find that campground!');
+            return res.redirect('/campgrounds');
+        }
+        res.render('edit',{campgrounds});
+    }))
+    
+router.put('/:id/edit',isLoggedIn,upload.array('image'),validateCampground ,isAuthor,catchAsync (async(req,res)=>{
+    const {id} =req.params;
+    const geodata= await geocodingClient.forwardGeocode({
+            
+        query: req.body.campground.location,
+        limit: 1
+      })
+        .send()
+    
+    const imgs=req.files.map(m =>({url:m.path,filename:m.filename}));
+     const camp= await campground.findByIdAndUpdate(id,{...req.body.campground});
+     camp.images.push(...imgs);
+     camp.geometry=geodata.body.features[0].geometry;
+     await camp.save();
+     
+     if(req.body.deleteFile){
+        for (let filename of req.body.deleteFile){
+            await cloudinary.uploader.destroy(filename);
+         }
+        await camp.updateOne({$pull: {images: {filename: {$in: req.body.deleteFile}}}});
+     } 
+       res.redirect(`/campgrounds/${id}`);
+ }))
+ router.post('/news',upload.array('image', 12),(req,res)=>{
+
+    res.send("working");
+
+ })
+ router.post('/new',isLoggedIn ,upload.array('image'),validateCampground,catchAsync(async (req,res,next)=>{
+    const geodata= await geocodingClient.forwardGeocode({
+            
+        query: req.body.campground.location,
+        limit: 1
+      })
+        .send()
+
+    const image=req.files.map(m =>({url:m.path,filename:m.filename}));
+    const camp= new campground(req.body.campground);
+    //  const img=new campground({image:'C:\Users\USER\Downloads\PXL_20230930_113316226.jpg'});
+    //  await img.save();
+    camp.images=image;
+    camp.geometry=geodata.body.features[0].geometry;
+    camp.author=req.user._id;
+    // const author=new campground({author:req.user});
+
+    await camp.save();
+
+    req.flash('success', 'Successfully made a new campground!');
+    res.redirect(`/campgrounds/${camp._id}`);
+}))
+
+    
+    router.delete('/:id/delete',isLoggedIn,isAuthor ,catchAsync (async(req,res)=>{
+        const {id} =req.params;
+        const deleteCamp=await campground.findByIdAndDelete(id);
+        if (!campground) {
+            req.flash('error', 'Cannot find that campground!');
+            return res.redirect('/campgrounds');
+        }
+        req.flash('success', 'Successfully deleted!');
+        res.redirect('/campgrounds');
+    }))
+  
+   
+   
+    
+    module.exports=router;
