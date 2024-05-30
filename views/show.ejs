@@ -2,7 +2,7 @@
 <link crossorigin="anonymous" rel="stylesheet" href='/stylesheet\starrating.css'>
 
         <div class="row">
-            <div class="col-6 mt-4">
+            <div class="col-md-6 mt-4">
               <div id="carouselExample" class="carousel slide">
                 <div class="carousel-inner">
                   <%   for(let i of campgrounds.images){%>
@@ -31,12 +31,9 @@
             </div>
             <ul class="list-group list-group-flush">
                 <li class="list-group-item text-muted"><%=campgrounds.location%></li>
-              <li class="list-group-item">$<%=campgrounds.price%>/Night</li>
+              <li class="list-group-item">INR<%=campgrounds.price%>/Night</li>
             </ul>
-            
-           
-              
-              
+          
             <%  if( localuser && campgrounds.author[0]._id.equals(localuser._id))  {%>
             <div class="card-body ">
               <a href="/campgrounds/<%=campgrounds._id%>/edit" class="card-link btn btn-primary">Edit</a>
@@ -51,13 +48,14 @@
           </div>
         </form>
         </div>
-        <div class="mt-4" id='map'></div>
+        <div class="col-md-6 mt-4">
+        <div class=" mb-4" id='map'></div>
         <% if(localuser){ %>
-        <div class="col-6 mt-4">
+        
           
 
           <form action="/campgrounds/<%=campgrounds._id%>/review"  method="POST" class="needs-validation" novalidate>
-            <div class="card mb-3">
+            <div class="card mb-3 p-3">
               
               <h3>Add a review</h3>
               <div>

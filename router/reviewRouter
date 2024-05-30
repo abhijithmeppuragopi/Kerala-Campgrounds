@@ -33,24 +33,9 @@ router.post('/',validateReview,isLoggedIn,catchAsync(async(req,res)=>{
     res.redirect(`/campgrounds/${campground._id}`);
 
 
-
-
-
-
-    // const rev= await new Review(req.body.review);
-    // const campground1=await campground.findById(req.params.id);
-    // rev.author=req.user._id;
-    // campground1.review.push(rev);
-    // await rev.save();
-    // await campground1.save();
-    // console.log(rev);
-    // const campgrounds=await campground.findById(req.params.id).populate('review');
-    // const review=await review.findById(req.params.id).populate('author');
-    // res.render('show',{campgrounds,review});
 }))
 router.delete('/:reviewid',isLoggedIn,catchAsync(async(req,res)=>{
     const {id,reviewid}=req.params;
-    console.log(id,reviewid);
     await Campground.findByIdAndUpdate(id,{$pull: { review:reviewid }});
     await Review.findByIdAndDelete(reviewid);
     

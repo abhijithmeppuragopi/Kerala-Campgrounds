@@ -14,7 +14,6 @@ router.post('/register',catchAsync(async (req,res,next)=>{
     const {username,email,password}=req.body;
     const user= await new User({email, username});
     const newUser=await User.register(user,password);
-    console.log(newUser);
     req.login(newUser,function(err){
         if(err){
             next(err);
@@ -36,7 +35,6 @@ res.render('user/login')
 router.post('/login' ,storeReturnTo,passport.authenticate('local', {failureFlash:true, failureRedirect: '/login' }),(req,res)=>{
     req.flash('success','welcome back');
     const redirectUrl = res.locals.returnTo || '/campgrounds';
-    console.log('im in login',redirectUrl);
     res.redirect(redirectUrl);
     })
 
@@ -46,7 +44,7 @@ router.get('/logout', (req, res, next) => {
                 return next(err);
             }
             req.flash('success', 'Goodbye!');
-            res.redirect('/index');
+            res.redirect('/');
         });
     }); 
 

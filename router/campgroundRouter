@@ -17,10 +17,6 @@ const mapBoxToken=process.env.MAPBOX_TOKEN;
 const geocodingClient=mbxGeocoding({accessToken:mapBoxToken});
 
 
-
-
-
-
 const validateCampground = (req, res, next) => {
     const { error } = campgroundSchema.validate(req.body);
     if (error) {
@@ -41,9 +37,7 @@ const isAuthor=async (req,res,next)=>{
 }
 
 
-router.get('/',catchAsync(async(req,res)=>{
-    //  const camp=new campground({title:'munnar',location:'mattuppetty',price:100})
-    //  await camp.save();   
+router.get('/',catchAsync(async(req,res)=>{ 
     const campgrounds=await campground.find({});
     res.render('home',{campgrounds});
     }))
@@ -69,12 +63,6 @@ router.get('/new',isLoggedIn,(req,res)=>{
         }
         res.render('show', { campgrounds });
 
-
-        // const {id} =req.params;
-        // const campgrounds=await campground.findById(id).populate('review');
-        // const author=await campground.findById(id).populate('author');
-        
-        // res.render('show',{campgrounds,author});
     }))
 
     router.get('/:id/edit',isLoggedIn,isAuthor ,catchAsync (async(req,res)=>{
