@@ -160,7 +160,7 @@ app.use('/campgrounds/:id/review', reviewRouter);
 app.use('/', registerRouter);
 
 
-app.get('/index',(req,res)=>{
+app.get('/',(req,res)=>{
     res.render('index');
 })
 app.all('*', (req, res, next) => {
